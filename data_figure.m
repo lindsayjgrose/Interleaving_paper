@@ -7,9 +7,7 @@ addpath(genpath("/Users/lindsay.grose/Documents/MATLAB/"))
 %%
 
 %WF transects, floats, and glider tracks on top of SSH 
-%%%
 
-%test
 
 path = '/Users/lindsay.grose/Documents/MATLAB/Datasets/SSH.nosync/';
 %/Volumes/MGL2312/raw/adcp/proc/os75bb/contour/os75bb.nc
