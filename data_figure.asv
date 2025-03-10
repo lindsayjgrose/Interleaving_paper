@@ -70,7 +70,7 @@ bath_data.elevation(ind) = NaN;
 
 BrownToBlue(112:128,:) = [];
 
-%%% need to be in float depth directory
+
 D = dir;
 cruise_path = pwd;
 pat = '(\d\d\d\d\d.*)';
@@ -104,10 +104,6 @@ colorwf = [0,0,0];
 colorglid = mymap(5,:);
 colorem = mymap(4,:);
 
-original_color = colorglid;  % Given color
-darkening_factor = 0.77;  % Reduce brightness (0.8 = 20% darker)
-darker_color = original_color * darkening_factor;
-
 figure
 ax1 = subplot(1,2,1);
 set(gcf,'Position',[75 385 2322 952],'color','w')
@@ -118,11 +114,11 @@ auxh = colorbar();
 hold on 
 contour(ssh_data.longitude,ssh_data.latitude,ssh_data.adt(:,:,sshind)',[1.5 1 0.75 0.25 0 -0.25],'k',"ShowText",true,'LineWidth',2);
 % plot(alldata.float_lon(floatind),alldata.float_lat(floatind),'.','color',mymap(4,:),'MarkerSize',40,'HandleVisibility','off')
-plot(alldata.WF_lon,alldata.WF_lat,'.','color',rgb('Black'),'MarkerSize',40,'HandleVisibility','off')
+plot(alldata.WF_lon,alldata.WF_lat,'.','color',rgb('Black'),'MarkerSize',48,'HandleVisibility','off')
 % plot(alldata.glider_lon(gliderind),alldata.glider_lat(gliderind),'.','color',mymap(5,:),'MarkerSize',40,'HandleVisibility','off')
-b = plot(12,-50,'.','color',rgb('Black'),'MarkerSize',60);
-t = plot(12,-50,'.','color',rgb('Maroon'),'MarkerSize',60);
-g = plot(12,-50,'.','color', rgb('DarkKhaki'),'MarkerSize',60);
+b = plot(alldata.WF_lon(1),alldata.WF_lat(1),'.','color',rgb('Black'),'MarkerSize',48);
+t = plot(12,-50,'.','color',colorem,'MarkerSize',48);
+g = plot(12,-50,'.','color',colorglid,'MarkerSize',48);
 legend({'','','Wire Flyer','EM-APEX','Glider'},'FontWeight','Bold','FontSize',40)
 set(ax1,'DataAspectRatio',[1/cosd(mean([minlat maxlat])) 1 1]  );
 axis([minlon,maxlon,minlat,maxlat]);
@@ -157,8 +153,8 @@ colormap(ax2,flipud(BrownToBlue))
 axis(ax2,[minlon,maxlon,minlat,maxlat])
 clim([0,6000])
 hold on
-plot(alldata.float_lon,alldata.float_lat,'.','color',rgb('Maroon'),'MarkerSize',40,'HandleVisibility','off')
-plot(alldata.glider_lon,alldata.glider_lat,'.','color', rgb('DarkKhaki'),'MarkerSize',40,'HandleVisibility','off')
+plot(alldata.float_lon,alldata.float_lat,'.','color',rgb('Maroon'),'MarkerSize',56,'HandleVisibility','off')
+plot(alldata.glider_lon,alldata.glider_lat,'.','color',[0.7, 0.7, 0.7],'MarkerSize',56,'HandleVisibility','off')
 set(ax2,'DataAspectRatio',[1/cosd(mean([minlat maxlat])) 1 1]  );
 ax2.FontWeight = 'Bold'; 
 set(ax2,'XTick',[12.0 16.0 20.0 24.0],'XTickLabel',{['12',char(176),'E'],['16',char(176),'E'],['20',char(176),'E'],['24',char(176),'E']})
@@ -176,4 +172,31 @@ text(xLimits(1)-1.7, yLimits(2), 'b)', 'HorizontalAlignment', 'right', 'Vertical
 
 % saveas(gcf, '/Users/lindsay.grose/Documents/MATLAB/Saved_plots/QUICCHE/Interleaving_paper/data_map.png');
 
+%% distance between dive 5 and dive 8
 
+lat_ant1 = -37.3449;
+lon_ant1 = 14.0832;
+lat_ant2 = -36.7747;
+lon_ant2 = 16.8718;
+
+dist_dives = lldistkm([lat_ant1,lon_ant1],[lat_ant2,lon_ant2]);
+
+lat_d1 = -37.1218;
+lon_d1 = 14.5735;
+lat_d2 = -35.2377;
+lon_d2 = 15.8299;
+
+diam_eddy = lldistkm([lat_d1,lon_d1],[lat_d2,lon_d2]);
+
+velocity = 1/1000; %km/s
+
+circum_eddy = pi*diam_eddy;
+
+time_one_twist = (circum_eddy/velocity)/(3600*24);
+
+
+
+%%
+load('20230327_121621_derived_quantities.mat')
+
+mean(data.depth.ADCP.along_track_u,'all','omitnan')
