@@ -4,14 +4,18 @@ close all
 
 addpath(genpath("/Users/lindsay.grose/Documents/URI/git.nosync/"))
 addpath(genpath("/Users/lindsay.grose/Documents/MATLAB/"))
+
+D = dir;
+cruise_path = '/Users/lindsay.grose/Documents/MATLAB/Datasets/EM_Apex_Floats/Processes_data/Depth/';
+cd(cruise_path);
+
 %%
 
 %WF transects, floats, and glider tracks on top of SSH 
 
-
 path = '/Users/lindsay.grose/Documents/MATLAB/Datasets/SSH.nosync/';
 %/Volumes/MGL2312/raw/adcp/proc/os75bb/contour/os75bb.nc
-file = 'Cape_Basin_2023-03-04_2023-11-13.nc';
+file = 'Cape_Basin_2023_03_04_2023_11_13.nc';
 ssh_data = ncload([path,file]);
 
 ogdate = datetime([2023,03,04,0,0,0],'timezone','UTC','format','yyyy-MM-dd HH:mm:ss');
@@ -40,10 +44,15 @@ for wf=1:10
     alldata.WF_lon = [alldata.WF_lon;wf_all.lon{wf}];
 end
 
-% get glider data in here
-glider_data = ncload('/Users/lindsay.grose/Documents/MATLAB/Datasets/Glider/ds_ATD.nc');
-alldata.glider_lat = glider_data.lat;
-alldata.glider_lon = glider_data.long;
+alldata_deep.WF_lat = [];
+alldata_deep.WF_lon = [];
+
+deepnums = [5,6,7,8];
+for wf=1:length(deepnums)
+    alldata_deep.WF_lat = [alldata_deep.WF_lat;wf_all.lat{deepnums(wf)}];
+    alldata_deep.WF_lon = [alldata_deep.WF_lon;wf_all.lon{deepnums(wf)}];
+end
+
     
 alldata.ssh_time = datenow;
 alldata.ssh_lat = ssh_data.latitude;
@@ -71,8 +80,6 @@ bath_data.elevation(ind) = NaN;
 BrownToBlue(112:128,:) = [];
 
 %%% need to be in float depth directory
-D = dir;
-cruise_path = pwd;
 pat = '(\d\d\d\d\d.*)';
 dir_names = [];
 for ii = 1:length(D) 
@@ -108,6 +115,10 @@ original_color = colorglid;  % Given color
 darkening_factor = 0.77;  % Reduce brightness (0.8 = 20% darker)
 darker_color = original_color * darkening_factor;
 
+smoothed = smoothdata((bath_data.elevation')*-1, 1, 'gaussian', 25);  % smooth down columns
+smoothed = smoothdata(smoothed, 2, 'gaussian', 25);  % then across rows
+
+
 figure
 ax1 = subplot(1,2,1);
 set(gcf,'Position',[75 385 2322 952],'color','w')
@@ -117,24 +128,25 @@ colormap(cmocean('rain'))
 auxh = colorbar();
 hold on 
 contour(ssh_data.longitude,ssh_data.latitude,ssh_data.adt(:,:,sshind)',[1.5 1 0.75 0.25 0 -0.25],'k',"ShowText",true,'LineWidth',2);
+contour(bath_data.lon,bath_data.lat,smoothed,[500,1000,2000,3000],'LineColor',rgb('Beige'),"ShowText",true,'LineWidth',3)
 % plot(alldata.float_lon(floatind),alldata.float_lat(floatind),'.','color',mymap(4,:),'MarkerSize',40,'HandleVisibility','off')
-plot(alldata.WF_lon,alldata.WF_lat,'.','color',rgb('Black'),'MarkerSize',40,'HandleVisibility','off')
-% plot(alldata.glider_lon(gliderind),alldata.glider_lat(gliderind),'.','color',mymap(5,:),'MarkerSize',40,'HandleVisibility','off')
-b = plot(12,-50,'.','color',rgb('Black'),'MarkerSize',60);
-t = plot(12,-50,'.','color',rgb('Maroon'),'MarkerSize',60);
-g = plot(12,-50,'.','color', rgb('DarkKhaki'),'MarkerSize',60);
-legend({'','','Wire Flyer','EM-APEX','Glider'},'FontWeight','Bold','FontSize',40)
+plot(alldata.WF_lon,alldata.WF_lat,'.','color',rgb('RoyalBlue'),'MarkerSize',40,'HandleVisibility','off')
+plot(alldata_deep.WF_lon,alldata_deep.WF_lat,'.','color',rgb('Red'),'MarkerSize',40,'HandleVisibility','off')
+h_text = plot(nan,nan,'LineStyle','none');
+b = plot(12,-50,'.','color',rgb('RoyalBlue'),'MarkerSize',70);
+b = plot(12,-50,'.','color',rgb('Red'),'MarkerSize',70);
+legend({'','','','Wire Flyer:','Shallow Dives','Deep Dives'},'FontWeight','Bold','FontSize',50)
 set(ax1,'DataAspectRatio',[1/cosd(mean([minlat maxlat])) 1 1]  );
 axis([minlon,maxlon,minlat,maxlat]);
 clim([-.25,1.5])
 ax1.FontWeight = 'Bold'; 
 cb1 = colorbar(ax1,'Position',[0.413867355727821,0.112394957983193,0.02,0.810924369747898]);
 cb1.FontSize = 32;
-ylabel(cb1, 'SSH (m)','FontWeight','Bold','FontSize',50) 
+ylabel(cb1, 'SSH (m)','FontWeight','Bold','FontSize',60) 
 set(ax1,'XTick',[12.0 16.0 20.0 24.0],'XTickLabel',{['12',char(176),'E'],['16',char(176),'E'],['20',char(176),'E'],['24',char(176),'E']})
 set(ax1,'YTick',[-40.0 -36.0 -32.0],'YTickLabel',{['40',char(176),'S'],['36',char(176),'S'],['32',char(176),'S']})
-ax1.XAxis.FontSize = 50;
-ax1.YAxis.FontSize = 50;
+ax1.XAxis.FontSize = 60;
+ax1.YAxis.FontSize = 60;
 ax1.XAxis.FontWeight = 'bold';
 ax1.YAxis.FontWeight = 'bold';
 pos = get(ax1, 'Position');
@@ -145,9 +157,9 @@ set(ax1, 'Position', pos +[-0.06,0,0,0]);
 xLimits = ax1.XLim;
 yLimits = ax1.YLim;
 text(xLimits(1)-1.7, yLimits(2), 'a)', 'HorizontalAlignment', 'right', 'VerticalAlignment', 'bottom','FontWeight','Bold','FontSize',44)
-text(12.2, -37.3, 'C-A','color',rgb('Khaki'),'FontWeight','Bold','FontSize',40)
-text(14.4, -38.7, 'SC','color',rgb('Khaki'),'FontWeight','Bold','FontSize',40)
-text(16.4, -36.1, 'A','color',rgb('Khaki'),'FontWeight','Bold','FontSize',40)
+text(11.4, -37.2, 'C-A','color',rgb('Khaki'),'FontWeight','Bold','FontSize',60)
+text(14.4, -38.8, 'SC','color',rgb('Khaki'),'FontWeight','Bold','FontSize',60)
+text(16.4, -36, 'A','color',rgb('Khaki'),'FontWeight','Bold','FontSize',60)
 
 
 ax2 = subplot(1,2,2);
@@ -157,23 +169,25 @@ colormap(ax2,flipud(BrownToBlue))
 axis(ax2,[minlon,maxlon,minlat,maxlat])
 clim([0,6000])
 hold on
-plot(alldata.float_lon,alldata.float_lat,'.','color',rgb('Maroon'),'MarkerSize',40,'HandleVisibility','off')
-plot(alldata.glider_lon,alldata.glider_lat,'.','color', rgb('DarkKhaki'),'MarkerSize',40,'HandleVisibility','off')
+plot(alldata.float_lon,alldata.float_lat,'.','color',rgb('Black'),'MarkerSize',20,'HandleVisibility','off')
+t = plot(12,-50,'.','color',rgb('Black'),'MarkerSize',70);
+legend({'', sprintf('Profiling\n  Float')}, 'FontWeight', 'Bold', 'FontSize', 50)
 set(ax2,'DataAspectRatio',[1/cosd(mean([minlat maxlat])) 1 1]  );
 ax2.FontWeight = 'Bold'; 
 set(ax2,'XTick',[12.0 16.0 20.0 24.0],'XTickLabel',{['12',char(176),'E'],['16',char(176),'E'],['20',char(176),'E'],['24',char(176),'E']})
 set(ax2,'YTick',[-40.0 -36.0 -32.0],'YTickLabel',{['40',char(176),'S'],['36',char(176),'S'],['32',char(176),'S']})
-ax2.XAxis.FontSize = 50;
-ax2.YAxis.FontSize = 50;
+ax2.XAxis.FontSize = 60;
+ax2.YAxis.FontSize = 60;
 cb2 = colorbar(ax2,'Position',[0.912575366063738,0.112394957983193,0.02,0.810924369747898]);
 cb2.FontSize = 32;
 set(cb2, 'YDir', 'reverse' );
-ylabel(cb2, 'Depth (m)','FontWeight','Bold','FontSize',50) 
+ylabel(cb2, 'Depth (m)','FontWeight','Bold','FontSize',60) 
 xLimits = ax2.XLim;
 yLimits = ax2.YLim;
 text(xLimits(1)-1.7, yLimits(2), 'b)', 'HorizontalAlignment', 'right', 'VerticalAlignment', 'bottom','FontWeight','Bold','FontSize',44)
+yticklabels([])
+text(12.4, -39, {'Schmidt-','Ott'},'color',rgb('White'),'FontWeight','Bold','FontSize',20,'HorizontalAlignment', 'center')
+text(14.4, -38.5, 'Erica','color',rgb('White'),'FontWeight','Bold','FontSize',20)
 
-
-% saveas(gcf, '/Users/lindsay.grose/Documents/MATLAB/Saved_plots/QUICCHE/Interleaving_paper/data_map.png');
-
+saveas(gcf, '/Users/lindsay.grose/Documents/MATLAB/Saved_plots/QUICCHE/Interleaving_paper/data_map.svg');
 
